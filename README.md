@@ -1,2 +1,2 @@
-# riderKar-server-meteor
-Servidor de riderKar
+# riderKar
+Pedidos ya en Cuba
