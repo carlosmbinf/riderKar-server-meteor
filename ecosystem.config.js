@@ -1,6 +1,6 @@
 module.exports = {
   apps : [{
-    name: "VIDKAR",
+    name: "RiderKAR",
     script: "npm start",
     env: {
       NODE_ENV: "development",
