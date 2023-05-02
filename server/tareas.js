@@ -49,6 +49,7 @@ if (Meteor.isServer) {
                         let venta = VentasCollection.findOne({
                           "producto.idTienda": tienda._id,
                           cadeteid:  null,
+                          status: "PREPARANDO"
                         });
 
 

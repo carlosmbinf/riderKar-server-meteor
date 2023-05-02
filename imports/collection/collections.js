@@ -226,7 +226,7 @@ export const SchemaVentasCollection = new SimpleSchema({
   },
   status: {
     type: String,
-    defaultValue: "PREPARANDO" || "ENCAMINO" || "ENTREGADO",
+    defaultValue: "PREPARANDO" || "CADETEENLOCAL" || "ENCAMINO" || "CADETEENDESTINO" || "ENTREGADO",
     optional: false,
   },
   idProducto: {

@@ -18,37 +18,67 @@ function replaceUrl(url, newUrl) {
   return url.replace(regex, newUrl);
 }
 
+const cambioDeEstadoPedidos = (status) => {
+  switch (status) {
+    case "PREPARANDO":
+      return "CADETEENLOCAL";
+    case "CADETEENLOCAL":
+      return "ENCAMINO";
+    case "ENCAMINO":
+      return "CADETEENDESTINO";
+    case "CADETEENDESTINO":
+      return "ENTREGADO";
+    default:
+      return "ENTREGADO";
+  }
+};
 if (Meteor.isServer) {
   console.log("Cargando Métodos...");
 
   Meteor.methods({
     agregarCadeteAColaPorTienda: (idTienda, cadeteId) => {
       let existe = ColaCadetesPorTiendasCollection.findOne({
-        cadeteId,
-        idTienda,
+        cadeteId: cadeteId,
+        idTienda: idTienda,
       });
-      let idColaCadetePorTiendas =
-        !existe &&
-        ColaCadetesPorTiendasCollection.insert({ cadeteId, idTienda });
+      let existeCadeteConPedido = PedidosAsignadosCollection.find({
+        userId: cadeteId,
+        entregado: false,
+      }).count();
+      let idColaCadetePorTiendas = !existe && existeCadeteConPedido == 0 && 
+      ColaCadetesPorTiendasCollection.insert({ cadeteId, idTienda });
       return idColaCadetePorTiendas;
     },
     reiniciarColaCadeteAllTiendas: (idCadete) => {
       ColaCadetesPorTiendasCollection.remove(idCadete);
     },
     asignarVentasACadetes: (ventaId, idCadete) => {
-      VentasCollection.update(ventaId, {
-        $set: {
-          cadeteid: idCadete,
-        },
-      });
+      let venta = VentasCollection.findOne(ventaId);
+      let cadete = PedidosAsignadosCollection.find({ cadeteId: idCadete, entregado:false });
+      if (cadete.count() == 0 && venta && venta.status == "PREPARANDO") {
 
-      let VentaAsignada = {
-        idVentas: ventaId,
-        userId: idCadete,
-      };
-      PedidosAsignadosCollection.insert(VentaAsignada);
+        let VentaAsignada = {
+          idVentas: ventaId,
+          userId: idCadete,
+        };
+        let idPedidoAsignado = PedidosAsignadosCollection.insert(VentaAsignada);
 
-      return PedidosAsignadosCollection;
+        idPedidoAsignado &&
+          VentasCollection.update(ventaId, {
+            $set: {
+              cadeteid: idCadete,
+            },
+          });
+
+        let coladelcadete = ColaCadetesPorTiendasCollection.findOne({
+          cadeteId: idCadete,
+        });
+        idPedidoAsignado &&
+          ColaCadetesPorTiendasCollection.remove(coladelcadete._id);
+
+        return idPedidoAsignado;
+      }
+      return null;
     },
     calcularDistancia: (lat1, lon1, lat2, lon2) => {
       const R = 6371; // Radio de la Tierra en km
@@ -107,7 +137,6 @@ if (Meteor.isServer) {
       comentario
     ) => {
       try {
-
         let cobroEntrega = await Meteor.settings.public.cobroEntrega;
         let producto = await ProductosCollection.findOne(idProducto);
         let tienda = await TiendasCollection.findOne({
@@ -120,7 +149,7 @@ if (Meteor.isServer) {
           idUser,
           idProducto,
           producto,
-          idTienda:producto.idTienda,
+          idTienda: producto.idTienda,
           tienda,
           status: "PREPARANDO",
           cantidad,
@@ -143,11 +172,63 @@ if (Meteor.isServer) {
         await PedidosAsignadosCollection.remove(idPedido);
         await ColaCadetesPorTiendasCollection.remove(idColaDeCadetesPorTiendas);
         pedidoAsignado &&
-          await VentasCollection.update(
+          (await VentasCollection.update(
             { _id: pedidoAsignado.idVentas },
             { $set: { cadeteid: null } }
-          );
-          console.log("Pedido", idPedido, " cancelado correctamente");
+          ));
+        console.log("Pedido", idPedido, " cancelado correctamente");
+      } catch (error) {
+        console.log(error.message);
+
+        return error;
+      }
+    },
+    avanzarPedidos: async (idPedido, idCadete) => {
+      try {
+        let pedidoAsignado = await PedidosAsignadosCollection.findOne({
+          _id: idPedido,
+          entregado: false,
+        });
+        let venta =
+          pedidoAsignado &&
+          (await VentasCollection.findOne(pedidoAsignado.idVentas));
+        if (venta) {
+          switch (venta.status) {
+            case "CADETEENDESTINO":
+              // let idColaDeCadetesPorTiendas =
+              //   await ColaCadetesPorTiendasCollection.findOne({
+              //     cadeteId: idCadete,
+              //   });
+
+              await PedidosAsignadosCollection.update(idPedido, {
+                $set: { entregado: true },
+              });
+              // await ColaCadetesPorTiendasCollection.remove(
+              //   idColaDeCadetesPorTiendas
+              // );
+
+              await VentasCollection.update(
+                { _id: pedidoAsignado.idVentas },
+                { $set: { status: "ENTREGADO", cadeteid: null } }
+              );
+
+              break;
+
+            default:
+              await VentasCollection.update(
+                { _id: pedidoAsignado.idVentas },
+                {
+                  $set: {
+                    status: cambioDeEstadoPedidos(venta.status),
+                    cadeteid: null,
+                  },
+                }
+              );
+              break;
+          }
+        }
+
+        console.log("Pedido", idPedido, " Continuado correctamente");
       } catch (error) {
         console.log(error.message);
 
