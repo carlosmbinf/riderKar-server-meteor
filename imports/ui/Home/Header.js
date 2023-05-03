@@ -65,6 +65,10 @@ const Header = () => {
     Meteor.logout();
   };
 
+  const concatenar = (arrayInicial,separador) =>{
+    let resultado = arrayInicial.join(separador)
+    return resultado
+  }
   return (
     <div
       style={{
@@ -113,13 +117,13 @@ const Header = () => {
                     noWrap
                     style={{
                       flexGrow: 1,
-                      textTransform: 'uppercase',
+                      textTransform: "uppercase",
                     }}
                     // className={classes.title}
-
                   >
-                    {Meteor.user().profile && Meteor.user().profile.role &&
-                      Meteor.user().profile.role.map((role,index) => role)}
+                    {Meteor.user().profile &&
+                      Meteor.user().profile.role &&
+                      concatenar(Meteor.user().profile.role, " - ")}
                   </Typography>
                 </Grid>
               </Grid>
@@ -212,4 +216,4 @@ const Header = () => {
 
 export default Header;
 
-// Creame un Drawer de MUI version 5
+// Necesito concatenar los string de un arreglo divididos por este char -

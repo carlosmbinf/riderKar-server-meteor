@@ -49,7 +49,7 @@ import BlockIcon from '@mui/icons-material/Block';
 
 //Collections
 
-// import { useHistory } from "react-router-dom";
+import  {useNavigate}   from "react-router-dom";
 import dateFormat from "dateformat";
 import { TiendasCollection } from "/imports/collection/collections";
 
@@ -124,7 +124,7 @@ export default function EmpresasTable(option) {
   const [selectedLimites, setSelectedLimites] = React.useState(null);
   const [selectedConProxy, setSelectedConProxy] = React.useState(null);
   const dt = React.useRef(null);
-  // const history = useHistory();
+  const history = useNavigate ();
 
   // var userOnline = useTracker(() => {
 
@@ -288,7 +288,7 @@ export default function EmpresasTable(option) {
             aria-label="delete"
             color="primary"
             onClick={() => {
-              // history.push("/precio/" + rowData.id);
+              history(`/tiendas/${rowData.id}/products`);
             }}
           >
             <ListAltIcon fontSize="large" />

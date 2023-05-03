@@ -37,7 +37,7 @@ export default function CardProducto(props) {
     setOpen(false);
   };
   const handleRecogidaEnLocal = (event) => {
-    setRecogidaEnLocal(!event.target.value);
+    setRecogidaEnLocal(!recogidaEnLocal);
   };
   const handleComentario = (event) => {
     setComentario(event.target.value);
@@ -99,6 +99,7 @@ export default function CardProducto(props) {
                 justifyContent="center"
                 alignItems="center"
                 spacing={2}
+                paddingTop={1}
               >
                 <Grid item xs={12} lg={12}>
                   <TextField
@@ -130,9 +131,8 @@ export default function CardProducto(props) {
                   <FormControlLabel
                     control={
                       <Checkbox
-                        value={recogidaEnLocal}
-                        onChange={handleRecogidaEnLocal}
-                        defaultChecked
+                      checked={recogidaEnLocal}
+                      onChange={handleRecogidaEnLocal}
                       />
                     }
                     label="Recoger en Local"

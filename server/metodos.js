@@ -32,6 +32,16 @@ const cambioDeEstadoPedidos = (status) => {
       return "ENTREGADO";
   }
 };
+
+function agregarElemento(arrayInicial, elemento) {
+  let array = arrayInicial
+  if (!array.includes(elemento)) {
+    array.push(elemento);
+  }
+  return array
+}
+
+
 if (Meteor.isServer) {
   console.log("Cargando Métodos...");
 
@@ -54,8 +64,8 @@ if (Meteor.isServer) {
     },
     asignarVentasACadetes: (ventaId, idCadete) => {
       let venta = VentasCollection.findOne(ventaId);
-      let cadete = PedidosAsignadosCollection.find({ cadeteId: idCadete, entregado:false });
-      if (cadete.count() == 0 && venta && venta.status == "PREPARANDO") {
+      let pedidosCadete = PedidosAsignadosCollection.find({ userId: idCadete, entregado:false });
+      if (pedidosCadete.count() == 0  && venta && venta.status == "PREPARANDO" && venta.recogidaEnLocal == false) {
 
         let VentaAsignada = {
           idVentas: ventaId,
@@ -111,7 +121,11 @@ if (Meteor.isServer) {
     },
 
     addEmpresa: (empresa) => {
+      
       try {
+        let profile = Meteor.users.findOne(empresa.idUser).profile
+        let role = agregarElemento(profile.role, "EMPRESA");
+        Meteor.users.update(empresa.idUser, { $set: { "profile.role": role } });
         let id = TiendasCollection.insert(empresa);
         return id;
       } catch (error) {
@@ -136,6 +150,7 @@ if (Meteor.isServer) {
       recogidaEnLocal,
       comentario
     ) => {
+      console.log("recogidaEnLocal",recogidaEnLocal)
       try {
         let cobroEntrega = await Meteor.settings.public.cobroEntrega;
         let producto = await ProductosCollection.findOne(idProducto);

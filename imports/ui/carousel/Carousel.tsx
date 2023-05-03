@@ -79,6 +79,8 @@ const Wrapper = styled.div`
 
 export default function Carousel({ items }: Props) {
   useLayoutEffect(() => {
+    console.log(items);
+    
     setTimeout(() => {
       //trigger synthetic resize event to force carousel
       //to recalculate items width
@@ -87,6 +89,7 @@ export default function Carousel({ items }: Props) {
   }, []);
 
   return (
+    items.length ? 
     <Wrapper>
       <AliceCarousel
         autoWidth
@@ -102,5 +105,6 @@ export default function Carousel({ items }: Props) {
         
       />
     </Wrapper>
+    :<></>
   );
 }

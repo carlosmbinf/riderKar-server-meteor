@@ -21,7 +21,7 @@ papper:{
 
 }))
 function CarouselAllProductos(props) {
-    const idTienda = props.isTienda
+    const idTienda = props.idTienda
     const {classes} = useStyles()
   const item = (product) => {
     return (

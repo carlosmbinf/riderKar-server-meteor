@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { AppBar, Grid, Paper } from "@mui/material";
 import Header from "./Header";
 import CreateEmpresa from "../Empresa/CreateEmpresa";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useParams  } from "react-router-dom";
 import Formulario from "../login/Login";
 import EmpresasTable from "../Empresa/EmpresasTable";
 import { makeStyles } from "tss-react/mui";
@@ -24,46 +24,69 @@ const useStyles = makeStyles()((theme) => ({
 
 const Home = () => {
   const { classes } = useStyles();
+  let { idTienda } = useParams();
   return (
     <>
       <Header />
       <Routes>
-        <Route path="create-empresa" element={<CreateEmpresa />} />
         <Route
-          path="list-empresas"
+          path="create-empresa"
           element={
-            <>
+            <Grid style={{ paddingTop: 80 }}>
               <CreateEmpresa />
-              <EmpresasTable />
-            </>
+            </Grid>
           }
         />
         <Route
-          path="add-products"
+          path="tiendas"
           element={
             <>
-              <CreateProductos />
-              <ProductosTable />
-              <CarouselAllProductos idTienda="KP8ZiKYJptGmHjaSS" />
+              <Grid container spacing={2} paddingTop={10}>
+                <Grid item xs={12}>
+                  <CreateEmpresa />
+                </Grid>
+
+                {/* {Meteor.user().profile.role.includes("admin") && (
+               <Grid item xs={12}>
+                <EmpresasTable />
+                </Grid>
+              )} */}
+                <Grid item xs={12}>
+                  <EmpresasTable />
+                </Grid>
+              </Grid>
             </>
           }
         />
         <Route
           path="products"
           element={
+            <Grid style={{ paddingTop: 80 }}>
+              {Meteor.user().profile.role.includes("admin") && (
+               <Grid item xs={12}>
+                <CreateProductos />
+                </Grid>
+              )}
+              <CarouselAllProductos />
+            </Grid>
+          }
+        />
+        <Route
+          path="tiendas/:idTienda/products"
+          element={
             <>
-              <Grid
-                container
-                spacing={2}
-              >
+              <Grid container spacing={2} paddingTop={10}>
                 <Grid item xs={12}>
-                  <Paper>
+                  {/* <Paper> */}
+                  {/* <CarouselAllProductos  /> */}
+                  <CarouselAllProductos idTienda={idTienda} />
+                  {/* </Paper> */}
+                </Grid>
+                {Meteor.user().profile.role.includes("admin") && (
+                  <Grid item xs={12}>
                     <ProductosTable />
-                  </Paper>
-                </Grid>
-                <Grid item xs={12}>
-                  <CarouselAllProductos idTienda="KP8ZiKYJptGmHjaSS" />
-                </Grid>
+                  </Grid>
+                )}
               </Grid>
             </>
           }
@@ -76,3 +99,4 @@ const Home = () => {
 export default Home;
 
 // necesito un metodo que me elimine de una URL el https://localhost:3000 y lo cambie por otro
+// Como busco en un array si un string existe?

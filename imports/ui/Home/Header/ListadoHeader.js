@@ -6,10 +6,6 @@ const listadoHeaderClient = [
 
 const listadoHeaderEmpresa = [
   {
-    to: "add-products",
-    text: "Agregar Productos",
-    icon: MenuIcon,
-  },{
     to: "products",
     text: "Productos",
     icon: MenuIcon,
@@ -19,6 +15,11 @@ const listadoHeaderAdmin = [
   {
     to: "create-empresa",
     text: "Crear Empresa",
+    icon: MenuIcon,
+  },
+  {
+    to: "tiendas",
+    text: "Tiendas",
     icon: MenuIcon,
   }
 ];

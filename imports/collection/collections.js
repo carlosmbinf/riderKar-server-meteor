@@ -197,6 +197,10 @@ export const SchemaTiendasCollection = new SimpleSchema({
     type: String,
     optional: true,
   },
+  idUser: {
+    type: String,
+    optional: false,
+  },
 });
 
 TiendasCollection.attachSchema(SchemaTiendasCollection);
@@ -253,7 +257,7 @@ export const SchemaVentasCollection = new SimpleSchema({
   },
   recogidaEnLocal:{
     type: Boolean,
-    defaultValue: false,
+    // defaultValue: false,
     optional: false,
   },
   cobroEntrega:{
