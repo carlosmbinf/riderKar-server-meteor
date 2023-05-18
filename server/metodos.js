@@ -4,13 +4,14 @@ import {
   OnlineCollection,
   MensajesCollection,
   PreciosCollection,
-  VentasCollection,
+  CarritoCollection,
   LogsCollection,
   TiendasCollection,
   ProductosCollection,
   ImagesCollection,
   PedidosAsignadosCollection,
   ColaCadetesPorTiendasCollection,
+  VentasCollection,
 } from "../imports/collection/collections";
 
 function replaceUrl(url, newUrl) {
@@ -55,8 +56,10 @@ if (Meteor.isServer) {
         userId: cadeteId,
         entregado: false,
       }).count();
-      let idColaCadetePorTiendas = !existe && existeCadeteConPedido == 0 && 
-      ColaCadetesPorTiendasCollection.insert({ cadeteId, idTienda });
+      let idColaCadetePorTiendas =
+        !existe &&
+        existeCadeteConPedido == 0 &&
+        ColaCadetesPorTiendasCollection.insert({ cadeteId, idTienda });
       return idColaCadetePorTiendas;
     },
     reiniciarColaCadeteAllTiendas: (idCadete) => {
@@ -64,9 +67,16 @@ if (Meteor.isServer) {
     },
     asignarVentasACadetes: (ventaId, idCadete) => {
       let venta = VentasCollection.findOne(ventaId);
-      let pedidosCadete = PedidosAsignadosCollection.find({ userId: idCadete, entregado:false });
-      if (pedidosCadete.count() == 0  && venta && venta.status == "PREPARANDO" && venta.recogidaEnLocal == false) {
-
+      let pedidosCadete = PedidosAsignadosCollection.find({
+        userId: idCadete,
+        entregado: false,
+      });
+      if (
+        pedidosCadete.count() == 0 &&
+        venta &&
+        venta.status == "PREPARANDO"
+        // && venta.recogidaEnLocal == false
+      ) {
         let VentaAsignada = {
           idVentas: ventaId,
           userId: idCadete,
@@ -121,9 +131,8 @@ if (Meteor.isServer) {
     },
 
     addEmpresa: (empresa) => {
-      
       try {
-        let profile = Meteor.users.findOne(empresa.idUser).profile
+        let profile = Meteor.users.findOne(empresa.idUser).profile;
         let role = agregarElemento(profile.role, "EMPRESA");
         Meteor.users.update(empresa.idUser, { $set: { "profile.role": role } });
         let id = TiendasCollection.insert(empresa);
@@ -143,35 +152,58 @@ if (Meteor.isServer) {
         return error;
       }
     },
-    addVenta: async (
+    addAlCarrito: async (
       idUser,
       idProducto,
       cantidad,
       recogidaEnLocal,
       comentario
     ) => {
-      console.log("recogidaEnLocal",recogidaEnLocal)
       try {
-        let cobroEntrega = await Meteor.settings.public.cobroEntrega;
         let producto = await ProductosCollection.findOne(idProducto);
         let tienda = await TiendasCollection.findOne({
           _id: producto.idTienda,
         });
-        console.log(producto);
-        console.log("cobroEntrega", cobroEntrega);
 
-        const id = await VentasCollection.insert({
+        const id = await CarritoCollection.insert({
           idUser,
+          cantidad,
           idProducto,
           producto,
           idTienda: producto.idTienda,
           tienda,
-          status: "PREPARANDO",
-          cantidad,
-          cobroEntrega,
-          recogidaEnLocal,
           comentario,
         });
+        return id;
+      } catch (error) {
+        console.log(error.message);
+
+        return error;
+      }
+    },
+    addVenta: async (idUser, comprasEnCarrito, comentario) => {
+      try {
+        let cobroEntrega = await Meteor.settings.public.cobroEntrega;
+        // let producto = await ProductosCollection.findOne(idProducto);
+        // let tienda = await TiendasCollection.findOne({
+        //   _id: producto.idTienda,
+        // });
+        comprasEnCarrito.forEach((carrito) => {
+          // console.log(carrito._id, "idCarrito");
+          CarritoCollection.remove(carrito._id);
+        });
+        
+        // console.log("comprasEnCarrito", comprasEnCarrito);
+
+        const id = await VentasCollection.insert({
+          idUser,
+          comprasEnCarrito,
+          status: "PREPARANDO",
+          cobroEntrega,
+          comentario,
+        });
+
+        
         return id;
       } catch (error) {
         console.log(error.message);
@@ -224,7 +256,7 @@ if (Meteor.isServer) {
 
               await VentasCollection.update(
                 { _id: pedidoAsignado.idVentas },
-                { $set: { status: "ENTREGADO", cadeteid: null } }
+                { $set: { status: "ENTREGADO", cadeteid: idCadete } }
               );
 
               break;
@@ -235,7 +267,7 @@ if (Meteor.isServer) {
                 {
                   $set: {
                     status: cambioDeEstadoPedidos(venta.status),
-                    cadeteid: null,
+                    cadeteid: idCadete,
                   },
                 }
               );

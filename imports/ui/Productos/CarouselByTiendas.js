@@ -13,17 +13,15 @@ import { makeStyles } from "tss-react/mui";
 import CardProducto from "./CardProducto";
 import { useParams } from "react-router-dom";
 
-
 const useStyles = makeStyles()((theme) => ({
-papper:{
-    margin:10
-}
-
-
-}))
-function CarouselAllProductos() {
-  let { idTienda } = useParams();
-
+  papper: {
+    margin: 10,
+  },
+}));
+function CarouselByTiendas(props) {
+  let { tiendaId } = useParams();
+  const idTienda = props.tiendaId || tiendaId;
+  
   const { classes } = useStyles();
   const item = (product) => {
     return <CardProducto product={product} />;
@@ -41,4 +39,4 @@ function CarouselAllProductos() {
   return <Carousel items={productos} />;
 }
 
-export default CarouselAllProductos;
+export default CarouselByTiendas;

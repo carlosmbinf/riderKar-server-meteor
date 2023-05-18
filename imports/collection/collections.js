@@ -8,6 +8,7 @@ export const OnlineCollection = new Mongo.Collection("online");
 export const MensajesCollection = new Mongo.Collection("mensajes");
 export const LogsCollection = new Mongo.Collection("Logs");
 export const PreciosCollection = new Mongo.Collection("precios");
+export const CarritoCollection = new Mongo.Collection("carrito");
 export const VentasCollection = new Mongo.Collection("ventas");
 export const VersionsCollection = new Mongo.Collection("versions");
 export const TiendasCollection = new Mongo.Collection("tiendas");
@@ -19,6 +20,7 @@ import { FilesCollection } from "meteor/ostrio:files";
 
 export const ImagesCollection = new FilesCollection({
   collectionName: "Images",
+  storagePath: "/public/img",
   allowClientCode: false, // Disallow remove files from Client
   onBeforeUpload(file) {
     // Allow upload files under 10MB, and only in png/jpg/jpeg formats
@@ -28,15 +30,7 @@ export const ImagesCollection = new FilesCollection({
     return "Please upload image, with size equal or less than 10MB";
   },
 });
-if (Meteor.isClient) {
-  Meteor.subscribe("files.images.all");
-}
 
-if (Meteor.isServer) {
-  Meteor.publish("files.images.all", function () {
-    return ImagesCollection.find().cursor;
-  });
-}
 
 //////////////SCHEMAS////////////////////
 export const SchemaProductosCollection = new SimpleSchema({
@@ -205,7 +199,7 @@ export const SchemaTiendasCollection = new SimpleSchema({
 
 TiendasCollection.attachSchema(SchemaTiendasCollection);
 
-export const SchemaVentasCollection = new SimpleSchema({
+export const SchemaCarritoCollection = new SimpleSchema({
   idUser: {
     type: String,
     optional: false,
@@ -226,11 +220,6 @@ export const SchemaVentasCollection = new SimpleSchema({
   cantidad: {
     type: Number,
     defaultValue: 1,
-    optional: false,
-  },
-  status: {
-    type: String,
-    defaultValue: "PREPARANDO" || "CADETEENLOCAL" || "ENCAMINO" || "CADETEENDESTINO" || "ENTREGADO",
     optional: false,
   },
   idProducto: {
@@ -255,9 +244,44 @@ export const SchemaVentasCollection = new SimpleSchema({
     type: String,
     optional: true,
   },
-  recogidaEnLocal:{
-    type: Boolean,
-    // defaultValue: false,
+  // recogidaEnLocal:{
+  //   type: Boolean,
+  //   defaultValue: false,
+  //   optional: false,
+  // }
+});
+
+CarritoCollection.attachSchema(SchemaCarritoCollection);
+
+export const SchemaVentasCollection = new SimpleSchema({
+  idUser: {
+    type: String,
+    optional: false,
+  },
+  createdAt: {
+    type: Date,
+    autoValue: function () {
+      if (this.isInsert) {
+        return new Date();
+      } else if (this.isUpsert) {
+        return { $setOnInsert: new Date() };
+      } else {
+        this.unset(); // Prevent user from supplying their own value
+      }
+    },
+    optional: false,
+  },
+  comprasEnCarrito:{
+    type: Array,
+    optional: false,
+  },
+  "comprasEnCarrito.$":{
+    type: SchemaCarritoCollection,
+    optional: false,
+  },
+  status: {
+    type: String,
+    defaultValue: "PREPARANDO" || "CADETEENLOCAL" || "ENCAMINO" || "CADETEENDESTINO" || "ENTREGADO",
     optional: false,
   },
   cobroEntrega:{
@@ -269,7 +293,12 @@ export const SchemaVentasCollection = new SimpleSchema({
     type: String,
     defaultValue: null,
     optional: true
+  },
+  comentario:{
+    type: String,
+    optional: true
   }
+  
 });
 
 VentasCollection.attachSchema(SchemaVentasCollection);
@@ -489,7 +518,7 @@ Meteor.users.allow({
     return Meteor.users.findOne({ _id: userId }).profile.role == "admin";
   },
 });
-VentasCollection.allow({
+CarritoCollection.allow({
   insert(doc) {
     // The user must be logged in and the document must be owned by the user.
     return true;
@@ -523,6 +552,39 @@ MensajesCollection.allow({
 });
 
 PreciosCollection.allow({
+  insert(userId, doc) {
+    // The user must be logged in and the document must be owned by the user.
+    return true;
+  },
+
+  update(userId, doc, fields, modifier) {
+    // Can only change your own documents.
+    return true;
+  },
+
+  remove(userId, doc) {
+    // Can only remove your own documents.
+    return Meteor.users.findOne({ _id: userId }).profile.role == "admin";
+  },
+});
+
+CarritoCollection.allow({
+  insert(userId, doc) {
+    // The user must be logged in and the document must be owned by the user.
+    return true;
+  },
+
+  update(userId, doc, fields, modifier) {
+    // Can only change your own documents.
+    return true;
+  },
+
+  remove(userId, doc) {
+    // Can only remove your own documents.
+    return Meteor.users.findOne({ _id: userId }).profile.role == "admin";
+  },
+});
+VentasCollection.allow({
   insert(userId, doc) {
     // The user must be logged in and the document must be owned by the user.
     return true;
@@ -591,7 +653,7 @@ Meteor.methods({
 
     try {
       await mi({
-        fields: VentasCollection.find().fetch(), // {array} data to import
+        fields: CarritoCollection.find().fetch(), // {array} data to import
         db: "meteor", // {string} name of db
         collection: "ventas", // {string|function} name of collection, or use a function to
         //  return a name, accept one param - [fields] the fields to import

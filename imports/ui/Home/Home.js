@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { useTracker } from "meteor/react-meteor-data";
 // import { makeStyles } from "@mui/material";
-import { AppBar, Grid, Paper } from "@mui/material";
+import { AppBar, Chip, Divider, Grid, Paper } from "@mui/material";
 import Header from "./Header";
 import CreateEmpresa from "../Empresa/CreateEmpresa";
 import { Route, Routes, useParams  } from "react-router-dom";
@@ -10,6 +11,8 @@ import { makeStyles } from "tss-react/mui";
 import CreateProductos from "../Productos/CreateProductos";
 import ProductosTable from "../Productos/ProductosTable";
 import CarouselAllProductos from "../Productos/CarouselAllProductos";
+import { TiendasCollection } from "/imports/collection/collections";
+import CarouselByTiendas from "../Productos/CarouselByTiendas";
 
 const drawerWidth = 240;
 
@@ -24,7 +27,19 @@ const useStyles = makeStyles()((theme) => ({
 
 const Home = () => {
   const { classes } = useStyles();
-  let { idTienda } = useParams();
+
+  const tiendasIds = useTracker(() => {
+    Meteor.subscribe("tiendas");
+    const tiendas = TiendasCollection.find().fetch();
+    const tiendasIds = [
+      
+        ...tiendas.map((tienda) => {
+          return { id: tienda._id, title: tienda.title,descripcion:tienda.descripcion  }
+        })
+    ];
+    return tiendasIds;
+  });
+  
   return (
     <>
       <Header />
@@ -62,12 +77,33 @@ const Home = () => {
           path="products"
           element={
             <Grid style={{ paddingTop: 80 }}>
-              {Meteor.user().profile.role.includes("admin") && (
-               <Grid item xs={12}>
-                <CreateProductos />
+              {Meteor.user().profile.role.includes("EMPRESA") && (
+                <Grid item xs={12}>
+                  <CreateProductos />
                 </Grid>
               )}
-              <CarouselAllProductos />
+              {tiendasIds.map((tienda) => (
+                <>
+                  <Divider hidden={true}>
+                    <Chip label={`${tienda.title}`} color="primary" />
+                  </Divider>
+                  <Grid
+                    container
+                    direction="row"
+                    justifyContent="center"
+                    alignItems="center"
+                    paddingTop={1}
+                  >
+                    <Chip label={`${tienda.descripcion}`} color="info" />
+                  </Grid>
+
+                  <CarouselByTiendas tiendaId={tienda.id} />
+                </>
+              ))}
+              {/* <Divider>
+                <Chip label={`All Products`} color="primary" />
+              </Divider>
+              <CarouselByTiendas /> */}
             </Grid>
           }
         />
@@ -79,7 +115,7 @@ const Home = () => {
                 <Grid item xs={12}>
                   {/* <Paper> */}
                   {/* <CarouselAllProductos  /> */}
-                  <CarouselAllProductos idTienda={idTienda} />
+                  <CarouselByTiendas />
                   {/* </Paper> */}
                 </Grid>
                 {Meteor.user().profile.role.includes("admin") && (

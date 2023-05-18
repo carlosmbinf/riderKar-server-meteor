@@ -3,14 +3,15 @@ import {
     OnlineCollection,
     MensajesCollection,
     PreciosCollection,
-    VentasCollection,
+    CarritoCollection,
     VersionsCollection,
     LogsCollection,
     TiendasCollection,
     ProductosCollection,
     ColaCadetesPorTiendasCollection,
     PedidosAsignadosCollection,
-    ImagesCollection
+    ImagesCollection,
+    VentasCollection
   } from "../imports/collection/collections";
 
 if (Meteor.isServer) {
@@ -67,6 +68,9 @@ if (Meteor.isServer) {
       });
       Meteor.publish("images", function (selector,option) {
         return ImagesCollection.find(selector?selector:{},option?option:{}).cursor;
+      });
+      Meteor.publish("carrito", function (selector,option) {
+        return CarritoCollection.find(selector?selector:{},option?option:{});
       });
       
 }

@@ -24,8 +24,9 @@ import {
   listadoHeaderAdmin,
   listadoHeaderEmpresa,
 } from "./Header/ListadoHeader";
+import ShoppingCart from "../Carrito/ShoppingCart";
 
-const drawerWidth = 240;
+const drawerWidth = 440;
 
 // const useStyles = makeStyles((theme) => ({
 // root: {
@@ -111,31 +112,43 @@ const Header = () => {
                     <MenuIcon />
                   </IconButton>
                 </Grid>
-                <Grid item>
-                  <Typography
-                    variant="h6"
-                    noWrap
-                    style={{
-                      flexGrow: 1,
-                      textTransform: "uppercase",
-                    }}
-                    // className={classes.title}
-                  >
-                    {Meteor.user().profile &&
-                      Meteor.user().profile.role &&
-                      concatenar(Meteor.user().profile.role, " - ")}
-                  </Typography>
-                </Grid>
               </Grid>
             </Grid>
             <Grid item>
-              <IconButton
-                color="inherit"
-                aria-label="logout"
-                onClick={handleLogout}
+              <Typography
+                variant="h6"
+                noWrap
+                style={{
+                  flexGrow: 1,
+                  textTransform: "uppercase",
+                }}
+                // className={classes.title}
               >
-                <ExitToAppIcon />
-              </IconButton>
+                WELCOME {Meteor.user().profile.firstName}
+              </Typography>
+            </Grid>
+            <Grid item>
+              <Grid
+                container
+                spacing={2}
+                direction="row"
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Grid item>
+                  <ShoppingCart />
+                </Grid>
+
+                <Grid item>
+                  <IconButton
+                    color="inherit"
+                    aria-label="logout"
+                    onClick={handleLogout}
+                  >
+                    <ExitToAppIcon />
+                  </IconButton>
+                </Grid>
+              </Grid>
             </Grid>
           </Grid>
         </Toolbar>
@@ -156,6 +169,29 @@ const Header = () => {
           }
         }
       >
+        <Grid
+          container
+          direction="row"
+          justifyContent="center"
+          alignItems="center"
+          height={100}
+        >
+          <Grid>
+            <Typography
+              // variant="h6"
+              noWrap
+              style={{
+                flexGrow: 1,
+                textTransform: "uppercase",
+              }}
+              // className={classes.title}
+            >
+              {Meteor.user().profile && Meteor.user().profile.role && (
+                <Chip label={concatenar(Meteor.user().profile.role, " - ")}></Chip>
+              )}
+            </Typography>
+          </Grid>
+        </Grid>
         <List>
           {listadoHeaderClient.length > 0 && (
             <Divider>
