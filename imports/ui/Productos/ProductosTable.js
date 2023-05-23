@@ -124,7 +124,7 @@ const useStyles = makeStyles()((theme) => {
   };
 });
 
-export default function ProductosTable(option) {
+export default function ProductosTable(props) {
   const { classes } = useStyles();
   const [open, setOpen] = React.useState(true);
   const [selectedOnline, setSelectedOnline] = React.useState(null);
@@ -132,6 +132,8 @@ export default function ProductosTable(option) {
   const [selectedLimites, setSelectedLimites] = React.useState(null);
   const [selectedConProxy, setSelectedConProxy] = React.useState(null);
   const dt = React.useRef(null);
+  let { tiendaId } = useParams();
+  const idTienda = props.tiendaId || tiendaId;
   // const history = useHistory();
 
   // var userOnline = useTracker(() => {
@@ -189,10 +191,8 @@ export default function ProductosTable(option) {
     // Meteor.subscribe("users");
     let a = [];
 
-    Meteor.subscribe("productos") &&
-      ProductosCollection.find(
-        {}
-      ).map(
+    Meteor.subscribe("productos", idTienda ? { idTienda: idTienda } : {}) &&
+      ProductosCollection.find(idTienda ? { idTienda: idTienda } : {}).map(
         (data) =>
           data &&
           a.push({

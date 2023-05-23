@@ -343,5 +343,8 @@ if (Meteor.isServer) {
         return error;
       }
     },
+    updateUbicacion: (cordenadas) => {
+      Meteor.users.update(Meteor.userId(),{$set:{cordenadas:cordenadas}})
+    }
   });
 }

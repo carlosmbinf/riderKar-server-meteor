@@ -19,15 +19,14 @@ if (Meteor.isServer) {
         "*/5 * * * * *",
         async () => {
           // await console.log("buscando riders cerca");
-         let tiendas =  TiendasCollection.find({}).fetch()
-         let userIds =  ["JGn9Zy4aSsA6K8hjp"]
-        //  await OnlineCollection.rawCollection().distinct(
-        //   "userId",
-        //   {
-        //     address: {
-        //       $ne: "127.0.0.1",
-        //     },
-        //   })
+         let tiendas =  await TiendasCollection.find({}).fetch()
+         let userIds = await OnlineCollection.rawCollection().distinct(
+          "userId",
+          {
+            address: {
+              $ne: "127.0.0.1",
+            },
+          })
 
           for (let index = 0; index < tiendas.length; index++) {
             console.log("Tienda",index);

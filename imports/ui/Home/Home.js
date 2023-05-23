@@ -4,7 +4,7 @@ import { useTracker } from "meteor/react-meteor-data";
 import { AppBar, Chip, Divider, Grid, Paper } from "@mui/material";
 import Header from "./Header";
 import CreateEmpresa from "../Empresa/CreateEmpresa";
-import { Route, Routes, useParams  } from "react-router-dom";
+import { Route, Routes, useParams } from "react-router-dom";
 import Formulario from "../login/Login";
 import EmpresasTable from "../Empresa/EmpresasTable";
 import { makeStyles } from "tss-react/mui";
@@ -32,14 +32,17 @@ const Home = () => {
     Meteor.subscribe("tiendas");
     const tiendas = TiendasCollection.find().fetch();
     const tiendasIds = [
-      
-        ...tiendas.map((tienda) => {
-          return { id: tienda._id, title: tienda.title,descripcion:tienda.descripcion  }
-        })
+      ...tiendas.map((tienda) => {
+        return {
+          id: tienda._id,
+          title: tienda.title,
+          descripcion: tienda.descripcion,
+        };
+      }),
     ];
     return tiendasIds;
   });
-  
+
   return (
     <>
       <Header />
@@ -61,14 +64,11 @@ const Home = () => {
                   <CreateEmpresa />
                 </Grid>
 
-                {/* {Meteor.user().profile.role.includes("admin") && (
+                {Meteor.user().profile.role.includes("admin") && (
                <Grid item xs={12}>
                 <EmpresasTable />
                 </Grid>
-              )} */}
-                <Grid item xs={12}>
-                  <EmpresasTable />
-                </Grid>
+              )}
               </Grid>
             </>
           }
@@ -108,7 +108,7 @@ const Home = () => {
           }
         />
         <Route
-          path="tiendas/:idTienda/products"
+          path="tiendas/:tiendaId/products"
           element={
             <>
               <Grid container spacing={2} paddingTop={10}>
