@@ -5,21 +5,151 @@ import Badge from '@mui/material/Badge';
 
 import { Meteor } from "meteor/meteor";
 import { useTracker } from "meteor/react-meteor-data";
-import { CarritoCollection } from '/imports/collection/collections';
+import { CarritoCollection, PaypalCollection } from '/imports/collection/collections';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
 import CloseIcon from '@mui/icons-material/Close';
-import Mapa from '../Maps/Maps';
+// import Mapa from '../Maps/Maps';
+
+import { connect } from 'react-redux';
+import ConnectedMap from '../Maps/Maps';
+import store from '/client/store';
+import { updateIdPaypal } from '/client/accionStores';
+import { Link } from 'react-router-dom';
 
 
-const steps = ["Confirmar Pedidos", "Pagar", "Registro"];
 
-const ShoppingCart = () => {
+const steps = ["Confirmar Pedidos", "Ubicacion", "Pago"];
+
+const ConnectedShoppingCart = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeStep, setActiveStep] = React.useState(0);
   const [skipped, setSkipped] = React.useState(new Set());
 
+
+  const userId = Meteor.userId();
+
   
+
+  const  {coordinate,idPaypal, precioTotalRedux } = store.getState()
+  
+  const creandoPago = async (
+    idUser,
+    value,
+    description
+  ) => {
+    await Meteor.call(
+      "creandoOrden",
+      idUser,
+      value,
+      description,
+       (error, success) => {
+        if (error) {
+          console.log("error", error);
+        }
+        if (success) {
+          console.log(success);
+          store.dispatch(updateIdPaypal(success))
+          // console.log(idPaypal);
+        }
+      }
+    );
+
+    // return await Meteor.call(
+    //   "obteniendoDatosDeOrdenPaypal",
+    //   "3G486218YT583830H",
+    //   function (error, success) {
+    //     if (error) {
+    //       console.log("error", error);
+    //     }
+    //     if (success) {
+    //       return success;
+    //     }
+    //   }
+    // );
+  };
+
+  const { ready, compras, idTiendas, precioTotal } = useTracker(() => {
+    let ready = Meteor.subscribe("carrito", { idUser: userId }).ready();
+
+    const compras = CarritoCollection.find({ idUser: userId }, { sort: { idTienda: 1 } }).fetch();
+    let precioTotal = 0
+    compras.forEach(
+      (compra) => (precioTotal += compra.producto.precio * compra.cantidad)
+    );
+    const idTiendas = [...new Set(compras.map(compra => compra.idTienda))];
+
+
+    
+
+    return {ready, compras, idTiendas, precioTotal };
+  });
+  
+
+  const {readyCompraPaypal,compraPaypal} = useTracker(() => {
+   const readyCompraPaypal =  Meteor.subscribe("paypal", { userId: userId, status: { $ne: 'COMPLETED' } }).ready();
+
+    const compraPaypal = PaypalCollection.findOne({ userId: userId, status: { $ne: 'COMPLETED' }  });
+
+    return {readyCompraPaypal,compraPaypal}
+  });
+
+
+
+  useEffect(() => {
+    // Update the document title using the browser API
+    compras.length == 0 && setActiveStep(0)
+
+    
+    // Meteor.call(
+    //   "creandoOrden",
+    //   userId,
+    //   precioTotal,
+    //   "Compras Online a travez de RiderKar",
+    //   function (error, success) {
+    //     if (error) {
+    //       console.log("error", error);
+    //     }
+    //     if (success) {
+    //       updateIdPaypal(success);
+    //     }
+    //   }
+    // );
+
+  },[compras]);
+
+
+  useEffect(() => {
+    // Update the document title using the browser API
+    // store.dispatch(updatePrecioTotal(precioTotal));
+    
+    // Meteor.call(
+    //   "creandoOrden",
+    //   userId,
+    //   precioTotal,
+    //   "Compras Online a travez de RiderKar",
+    //   function (error, success) {
+    //     if (error) {
+    //       console.log("error", error);
+    //     }
+    //     if (success) {
+    //       updateIdPaypal(success);
+    //     }
+    //   }
+    // );
+
+    ready && precioTotal > 0 &&
+    // precioTotalRedux != precioTotal &&
+    creandoPago(userId, precioTotal, "Compras Online a travez de RiderKar");
+
+
+  }, [precioTotal]);
+
+  // useEffect(() => {
+  //   setPagoPaypal(idPaypal)
+  // }, [idPaypal]);
+
+ 
 
   const isStepOptional = (step) => {
     return step === 1;
@@ -30,30 +160,31 @@ const ShoppingCart = () => {
   };
 
   const handleNext = () => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const latitud = position.coords.latitude;
-        const longitud = position.coords.longitude;
-        console.log('Ubicación del cliente:', latitud, longitud);
+    // if ('geolocation' in navigator) {
+    //   navigator.geolocation.getCurrentPosition((position) => {
+    //     const latitud = position.coords.latitude;
+    //     const longitud = position.coords.longitude;
+    //     console.log('Ubicación del cliente:', latitud, longitud);
         
-        let cordenadas = {"latitude":latitud,"longitude":longitud}
-        Meteor.call('updateUbicacion', cordenadas, function(error, success) { 
-          if (error) { 
-            console.log('error', error); 
-          } 
-          if (success) { 
-             console.log("Actualizado correctamente");
-          } 
-        });
-      }, (error) => {
-        console.error('Error al obtener la ubicación del cliente:', error);
-      });
-    } else {
-      console.error('Geolocalización no es compatible en este navegador.');
-    }
+    //     let cordenadas = {"latitude":latitud,"longitude":longitud}
+    //     Meteor.call('updateUbicacion', cordenadas, function(error, success) { 
+    //       if (error) { 
+    //         console.log('error', error); 
+    //       } 
+    //       if (success) { 
+    //          console.log("Actualizado correctamente");
+    //       } 
+    //     });
+    //   }, (error) => {
+    //     console.error('Error al obtener la ubicación del cliente:', error);
+    //   });
+    // } else {
+    //   console.error('Geolocalización no es compatible en este navegador.');
+    // }
 
     if (activeStep === steps.length - 1) {
       // confirmarPago();
+      window.location.href = compraPaypal.link
     } else {
       let newSkipped = skipped;
       if (isStepSkipped(activeStep)) {
@@ -108,6 +239,7 @@ const ShoppingCart = () => {
     handleClose()
   };
 
+
   const ProductoCard = ({_id, precio, nombre, cantidad }) => {
     const handleRemoveCarrito = () => CarritoCollection.remove(_id)
     return (
@@ -159,7 +291,7 @@ const ShoppingCart = () => {
     );
   };
 
-  const userId = Meteor.userId();
+
 
 
 const StepElements =()=>{
@@ -248,12 +380,12 @@ let ContentSteps = () => {
               xs={12}
               style={{ paddingBottom: 20 }}
             >
-              <Mapa/>
-              <Chip color="info" label={`Total a pagar: ${precioTotal} CUP`} />
+              <ConnectedMap/>
             </Grid>
           </Grid>
         );
       case steps.length-1:
+        
         return (
           <Grid
             item
@@ -264,6 +396,12 @@ let ContentSteps = () => {
             xs={12}
           >
             {/* <Button>Cerrar Carrito</Button> */}
+            {readyCompraPaypal && compraPaypal && (
+              <Button>
+                <Link to={compraPaypal.link}>{compraPaypal.idOrder}</Link>
+              </Button>
+            )}
+
             <h1>TOTAL PAGADO</h1>
             <Chip color="info" label={`Total a pagar: ${precioTotal} CUP`} />
             {/* <Button
@@ -293,25 +431,6 @@ let ContentSteps = () => {
 
 
 
-
-  const { compras, idTiendas, precioTotal } = useTracker(() => {
-    Meteor.subscribe("carrito", { idUser: userId });
-
-    const compras = CarritoCollection.find({ idUser: userId }, { sort: { idTienda: 1 } }).fetch();
-    let precioTotal = 0
-    compras.forEach(
-      (compra) => (precioTotal += compra.producto.precio * compra.cantidad)
-    );
-    const idTiendas = [...new Set(compras.map(compra => compra.idTienda))];
-
-    return { compras, idTiendas, precioTotal };
-  });
-  
-  useEffect(() => {
-    // Update the document title using the browser API
-    compras.length == 0 && setActiveStep(0)
-    
-  },[compras]);
 
   return (
     <>
@@ -386,7 +505,7 @@ let ContentSteps = () => {
             variant="contained"
             onClick={handleNext}
           >
-            {activeStep === steps.length - 1 ? "Finish" : "Confirm"}
+            {activeStep === steps.length - 1 ? "Pagar" : "Confirm"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -394,4 +513,6 @@ let ContentSteps = () => {
   );
 };
 
-export default ShoppingCart;
+export default ConnectedShoppingCart;
+
+

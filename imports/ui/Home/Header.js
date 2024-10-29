@@ -24,7 +24,13 @@ import {
   listadoHeaderAdmin,
   listadoHeaderEmpresa,
 } from "./Header/ListadoHeader";
-import ShoppingCart from "../Carrito/ShoppingCart";
+// import ShoppingCart from "../Carrito/ShoppingCart";
+
+
+import { Provider } from "react-redux";
+import store from '/client/store';
+import ConnectedShoppingCart from "../Carrito/ShoppingCart";
+
 
 const drawerWidth = 440;
 
@@ -136,7 +142,9 @@ const Header = () => {
                 alignItems="center"
               >
                 <Grid item>
-                  <ShoppingCart />
+                  <Provider store={store}>
+                    <ConnectedShoppingCart />
+                  </Provider>
                 </Grid>
 
                 <Grid item>

@@ -1,5 +1,10 @@
 import { Meteor } from "meteor/meteor";
 import { Accounts } from "meteor/accounts-base";
+import 'dotenv/config';
+
+import fetch from "node-fetch";
+import axios from 'axios';
+
 import {
   OnlineCollection,
   MensajesCollection,
@@ -12,11 +17,38 @@ import {
   PedidosAsignadosCollection,
   ColaCadetesPorTiendasCollection,
   VentasCollection,
+  PaypalCollection,
 } from "../imports/collection/collections";
+
+const environment = process.env.ENVIRONMENT || 'sandbox';
+const client_id = "AbjQ-Z9p5vQaaShPBQBnsknEEuheNALn1TdvpO2F3xR33pZQPGroW3yG9M6DLIrjw-gQl_vrUm-j7uvQ";
+const client_secret = "EAozjCCyTLZ9aN1tVMhIle_a-IjzmzjH5HwdUSxZskqbv1j5mM-dFbkoCiVuDiX6is0OR-icI6pJhk1z";
+const endpoint_url = environment === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com';
+
+console.log(client_id);
+
 
 function replaceUrl(url, newUrl) {
   const regex = /http?:\/\/localhost:3000/;
   return url.replace(regex, newUrl);
+}
+
+function get_access_token() {
+    const auth = `${client_id}:${client_secret}`
+    const data = 'grant_type=client_credentials'
+    return fetch(endpoint_url + '/v1/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${Buffer.from(auth).toString('base64')}`
+            },
+            body: data
+        })
+        .then(res => res.json())
+        .then(json => {
+            console.log(json.access_token);
+            return json.access_token;
+        })
 }
 
 const cambioDeEstadoPedidos = (status) => {
@@ -47,6 +79,163 @@ if (Meteor.isServer) {
   console.log("Cargando Métodos...");
 
   Meteor.methods({
+    creandoOrden: async (idUser, value, description) => {
+      return get_access_token()
+        .then((access_token) => {
+          let order_data_json = {
+            intent: "CAPTURE".toUpperCase(),
+            purchase_units: [
+              {
+                amount: {
+                  currency_code: "USD",
+                  value: value,
+                },
+                description: description,
+              },
+            ],
+            application_context: {
+              brand_name: "RiderKar",
+              landing_page: "LOGIN",
+              user_action: "PAY_NOW",
+              return_url: replaceUrl("http://localhost:3000/capture-order", Meteor.settings.public.ROOT_URL),
+              cancel_url: replaceUrl("http://localhost:3000/cancel-order", Meteor.settings.public.ROOT_URL),
+            },
+          };
+
+          //   {
+          //     'intent': "CAPTURE".toUpperCase(),
+          //     'purchase_units': [{
+          //         'amount': {
+          //             'currency_code': 'USD',
+          //             'value': '95.00'
+          //         },
+          //         "description":"pizza"
+          //     }],
+          //     application_context:{
+          //         brand_name:"VidKar",
+          //         landing_page:"LOGIN",
+          //         user_action:"PAY_NOW",
+          //         return_url:"http://localhost:3000/capture-order",
+          //         cancel_url:"http://localhost:3000/cancel-order"
+          //     }
+          // }
+          const data = JSON.stringify(order_data_json);
+
+          return fetch(endpoint_url + "/v2/checkout/orders", {
+            //https://developer.paypal.com/docs/api/orders/v2/#orders_create
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access_token}`,
+            },
+            body: data,
+          })
+            .then((res) => res.json())
+            .then(async (json) => {
+              console.log(json);
+              const { id, status, links } = json;
+              let carritos = await CarritoCollection.find({
+                idUser: idUser,
+              }).map((carrito) => {
+                return carrito._id;
+              });
+              let paypal = {
+                userId: idUser,
+                idOrder: id,
+                status: status,
+                link: links && links[1] && links[1].href,
+                carritos: carritos,
+              };
+              let pay = await PaypalCollection.findOne({
+                userId: idUser,
+                status: { $ne: "COMPLETED" },
+              });
+
+              if (!pay) {
+                id && status && links && PaypalCollection.insert(paypal);
+              } else {
+                PaypalCollection.update(pay._id, { $set: paypal });
+              }
+
+              return paypal;
+            }); //Send minimal data to client
+        })
+        .catch((err) => {
+          console.log(err);
+          // res.status(500).send(err)
+        });
+    },
+    obteniendoDatosDeOrdenPaypal: async (id) => {
+      return get_access_token()
+        .then((access_token) => {
+          return fetch(endpoint_url + `/v2/checkout/orders/${id}`, {
+            //https://developer.paypal.com/docs/api/orders/v2/#orders_create
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access_token}`,
+            },
+          })
+            .then((res) => res.json())
+            .then((json) => {
+              // console.log(json);
+              return json;
+            })
+            .catch((err) => {
+              console.log(err);
+              // res.status(500).send(err)
+            }); //Send minimal data to client
+        })
+        .catch((err) => {
+          console.log(err);
+          // res.status(500).send(err)
+        });
+    },
+    captureOrder: async (id) => {
+      // console.log(req)
+      // console.log(req.query)
+      const response = await axios
+        .post(
+          // `https://api.sandbox.paypal.com/v2/checkout/orders/${id}`,
+          `https://api-m.sandbox.paypal.com/v2/checkout/orders/${id}/capture`,
+          {},
+          {
+            auth: {
+              username:
+                "AbjQ-Z9p5vQaaShPBQBnsknEEuheNALn1TdvpO2F3xR33pZQPGroW3yG9M6DLIrjw-gQl_vrUm-j7uvQ",
+              password:
+                "EAozjCCyTLZ9aN1tVMhIle_a-IjzmzjH5HwdUSxZskqbv1j5mM-dFbkoCiVuDiX6is0OR-icI6pJhk1z",
+            },
+          }
+        )
+        .catch((error) => console.log(error));
+      // console.log(token,PayerID);
+      const { data } = response;
+      const { status } = data;
+      let pay = await PaypalCollection.findOne({ idOrder: id });
+      let userId = pay.userId;
+      await PaypalCollection.update(pay._id, {
+        $set: { status: status, data },
+      });
+      const compras = await CarritoCollection.find({ idUser: userId }, { sort: { idTienda: 1 } }).fetch();
+      const idTiendas = [...new Set(compras.map(compra => compra.idTienda))];
+
+
+
+      idTiendas.forEach((idTienda) => {
+        const comprasEnCarrito = compras.filter(
+          (compra) => compra.idTienda === idTienda
+        );
+            // console.log(comprasEnCarrito);
+            // comprasEnCarrito.map((compra) => {
+            //  console.log(compra);
+            // })
+            Meteor.call("addVenta",userId,comprasEnCarrito,"",pay._id,(error,idResult)=>console.log(`Venta agregada con id: ${idResult}`));
+      })
+
+
+      return data;
+    },
     agregarCadeteAColaPorTienda: (idTienda, cadeteId) => {
       let existe = ColaCadetesPorTiendasCollection.findOne({
         cadeteId: cadeteId,
@@ -181,29 +370,25 @@ if (Meteor.isServer) {
         return error;
       }
     },
-    addVenta: async (idUser, comprasEnCarrito, comentario) => {
+    addVenta: async (idUser, comprasEnCarrito, comentario, idPaypal) => {
       try {
         let cobroEntrega = await Meteor.settings.public.cobroEntrega;
-        // let producto = await ProductosCollection.findOne(idProducto);
-        // let tienda = await TiendasCollection.findOne({
-        //   _id: producto.idTienda,
-        // });
-        comprasEnCarrito.forEach((carrito) => {
-          // console.log(carrito._id, "idCarrito");
+        
+        await comprasEnCarrito.forEach((carrito) => {
           CarritoCollection.remove(carrito._id);
         });
         
-        // console.log("comprasEnCarrito", comprasEnCarrito);
-
         const id = await VentasCollection.insert({
           idUser,
-          comprasEnCarrito,
+          comprasEnCarrito: comprasEnCarrito,
           status: "PREPARANDO",
           cobroEntrega,
           comentario,
+          idPaypal,
         });
 
         
+
         return id;
       } catch (error) {
         console.log(error.message);
@@ -344,7 +529,9 @@ if (Meteor.isServer) {
       }
     },
     updateUbicacion: (cordenadas) => {
-      Meteor.users.update(Meteor.userId(),{$set:{cordenadas:cordenadas}})
-    }
+      Meteor.users.update(Meteor.userId(), {
+        $set: { cordenadas: cordenadas },
+      });
+    },
   });
 }

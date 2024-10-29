@@ -13,6 +13,9 @@ import ProductosTable from "../Productos/ProductosTable";
 import CarouselAllProductos from "../Productos/CarouselAllProductos";
 import { TiendasCollection } from "/imports/collection/collections";
 import CarouselByTiendas from "../Productos/CarouselByTiendas";
+import RandomProductImages from "../Empresa/RandomProductImages";
+import DetallesCompra  from "../Carrito/DetallesCompra";
+import RowExpansionDemo from "../Carrito/PruebaComrpa";
 
 const drawerWidth = 240;
 
@@ -65,10 +68,13 @@ const Home = () => {
                 </Grid>
 
                 {Meteor.user().profile.role.includes("admin") && (
-               <Grid item xs={12}>
-                <EmpresasTable />
+                  <Grid item xs={12}>
+                    <EmpresasTable />
+                  </Grid>
+                )}
+                <Grid item xs={12}>
+                  <RandomProductImages />
                 </Grid>
-              )}
               </Grid>
             </>
           }
@@ -121,6 +127,21 @@ const Home = () => {
                 {Meteor.user().profile.role.includes("admin") && (
                   <Grid item xs={12}>
                     <ProductosTable />
+                  </Grid>
+                )}
+              </Grid>
+            </>
+          }
+        />
+        <Route
+          path="compras/:idCompra"
+          element={
+            <>
+              <Grid container spacing={2} paddingTop={10}>
+                {Meteor.user().profile.role.includes("admin") && (
+                  <Grid item xs={12}>
+                    {/* <DetallesCompra /> */}
+                    <RowExpansionDemo />
                   </Grid>
                 )}
               </Grid>

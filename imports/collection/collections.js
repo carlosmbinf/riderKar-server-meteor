@@ -13,6 +13,7 @@ export const VentasCollection = new Mongo.Collection("ventas");
 export const VersionsCollection = new Mongo.Collection("versions");
 export const TiendasCollection = new Mongo.Collection("tiendas");
 export const ProductosCollection = new Mongo.Collection("productos");
+export const PaypalCollection = new Mongo.Collection("paypal");
 export const PedidosAsignadosCollection = new Mongo.Collection("pedidosAsignados");
 export const ColaCadetesPorTiendasCollection = new Mongo.Collection("colacadetesxtiendas");
 
@@ -83,6 +84,56 @@ export const SchemaProductosCollection = new SimpleSchema({
 });
 
 ProductosCollection.attachSchema(SchemaProductosCollection);
+
+//////////////SCHEMAS////////////////////
+export const SchemaPaypalCollection = new SimpleSchema({
+  idOrder: {
+    type: String,
+    optional: false,
+  },
+  carritos: {
+    type: Array,
+    optional: true,
+  },
+  data: {
+    type: Object,
+    optional: true,
+    blackbox: true,
+  },
+  status: {
+    type: String,
+    defaultValue: "CREATED",
+    optional: true,
+  },
+  "carritos.$": {
+    type: String,
+    optional: true,
+  },
+  link: {
+    type: String,
+    optional: true,
+  },
+  userId: {
+    type: String,
+    optional: false,
+  },
+  createdAt: {
+    type: Date,
+    autoValue: function () {
+      if (this.isInsert) {
+        return new Date();
+      } else if (this.isUpsert) {
+        return { $setOnInsert: new Date() };
+      } else {
+        this.unset(); // Prevent user from supplying their own value
+      }
+    },
+    optional: false,
+  },
+});
+
+PaypalCollection.attachSchema(SchemaPaypalCollection);
+
 
 export const SchemaColaCadetesPorTiendasCollection = new SimpleSchema({
   idTienda: {
@@ -235,21 +286,23 @@ export const SchemaCarritoCollection = new SimpleSchema({
     type: String,
     optional: true,
   },
-  tienda:{
+  tienda: {
     type: SchemaTiendasCollection,
     // defaultValue: {},
     optional: false,
   },
   comentario: {
     type: String,
+    defaultValue: "",
     optional: true,
-  },
+  }
   // recogidaEnLocal:{
   //   type: Boolean,
   //   defaultValue: false,
   //   optional: false,
   // }
 });
+
 
 CarritoCollection.attachSchema(SchemaCarritoCollection);
 
@@ -297,7 +350,11 @@ export const SchemaVentasCollection = new SimpleSchema({
   comentario:{
     type: String,
     optional: true
-  }
+  },
+  idPaypal:{
+    type: String,
+    optional: false
+  },
   
 });
 

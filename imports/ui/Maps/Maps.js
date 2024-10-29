@@ -1,54 +1,111 @@
-import React, { useState } from 'react';
-import GoogleMapReact from 'google-map-react';
-import CustomMarker from './CustomMarker';
-import Marker from './CustomMarker';
+import React, { useEffect, useState } from "react";
+import { GoogleMap, Marker } from "@react-google-maps/api";
+import { CarritoCollection } from "/imports/collection/collections";
+import { useTracker } from "meteor/react-meteor-data";
+import { Meteor } from "meteor/meteor";
 
-function Mapa() {
-  const [clienteUbicacion, setClienteUbicacion] = useState(null);
-  const [seleccionUbicacion, setSeleccionUbicacion] = useState(null);
+import { connect } from 'react-redux';
 
-  const handleMapClick = (event) => {
-    const latitud = event.lat;
-    const longitud = event.lng;
-    setSeleccionUbicacion({ latitud, longitud });
-    console.log(latitud, longitud);
+
+// Acción para modificar la coordenada
+const updateCoordinate = (coordinate) => ({
+  type: 'UPDATE_COORDINATE',
+  payload: coordinate,
+});
+
+
+const containerStyle = {
+  width: "400px",
+  height: "400px",
+};
+
+
+const markers = [
+  {
+    id: 1,
+    position: { lat: -34.7749, lng: -56.3194 },
+  },
+  {
+    id: 2,
+    position: { lat: 37.7596, lng: -122.427 },
+  },
+  {
+    id: 3,
+    position: { lat: 37.7749, lng: -122.4294 },
+  },
+];
+
+function Mapa({ coordinate, updateCoordinate }) {
+  const [center, setCenter] = useState(coordinate?coordinate:{ lat: -34.7749, lng: -56.3194 })
+  const [posicion,setPosicion] = useState()
+  const [ready,setReady] = useState(false)
+  
+ 
+
+  const handleMarkerClick = (marker) => {
+    console.log("Marker clicked:", marker);
+    // Handle your marker click logic here
   };
 
-  const handleMarkerClick = () => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const latitud = position.coords.latitude;
-      const longitud = position.coords.longitude;
-      setClienteUbicacion({ latitud, longitud });
-    }, (error) => {
-      console.error('Error al obtener la ubicación del cliente:', error);
-    });
-  };
+  useEffect(()=>{
+    setReady(false)
+    coordinate && setReady(true)
+  },[coordinate])
+
+  const { compras } = useTracker(() => {
+    Meteor.subscribe("carrito", { idUser: Meteor.userId() });
+
+    const compras = CarritoCollection.find({ idUser: Meteor.userId() }, { sort: { idTienda: 1 } }).fetch();
+
+    return { compras };
+  });
+
+
+  const cambiarCoordenadas =  (coordenadas) =>{
+    setCenter(coordenadas)
+
+    updateCoordinate(coordenadas)
+
+    setPosicion(coordenadas);
+    console.log("Coordenadas",coordinate);
+  // await  compras.forEach(compra=>{
+  //     CarritoCollection.update(compra._id, {
+  //       $set: { coordenadas: coordenadas },
+  //     });
+  //   })
+  }
+
 
   return (
-    <div style={{ height: "400px", width: "100%" }}>
-      <GoogleMapReact
-        onClick={handleMapClick}
-        defaultCenter={{ lat: 37.7749, lng: -122.4194 }}
-        defaultZoom={12}
-      >
-        {seleccionUbicacion && (
-          <CustomMarker
-            lat={seleccionUbicacion.latitud}
-            lng={seleccionUbicacion.longitud}
-            text="Ubicación seleccionada"
-          />
-        )}
-
-        {clienteUbicacion && (
-          <Marker
-          lat={37.7749}
-          lng={-122.4194}
-          text="Marcador personalizado"
+    <GoogleMap
+      mapContainerStyle={containerStyle}
+      clickableIcons={false}
+      center={center}
+      zoom={17}
+      onClick={({ latLng }) => cambiarCoordenadas(latLng.toJSON())}
+      onLoad={(map) => map && console.log(map)}
+    >
+      {ready && (
+        <Marker
+          position={coordinate}
+          title="Hola"
+          visible={true}
+          draggable={true}
+          onDragEnd={({latLng}) => cambiarCoordenadas(latLng.toJSON())}
+          onClick={() => handleMarkerClick(posicion)}
         />
-        )}
-      </GoogleMapReact>
-    </div>
+      )}
+    </GoogleMap>
   );
 }
 
-export default Mapa;
+
+// Función para mapear el estado de Redux a las props del componente
+const mapStateToProps = (state) => ({
+  coordinate: state.coordinate, // Asumiendo que la coordenada está almacenada en el estado global como 'coordinate'
+});
+
+// Conectar el componente Map a Redux y agregar la acción para modificar la coordenada
+const ConnectedMap = connect(mapStateToProps, { updateCoordinate })(Mapa);
+
+export default ConnectedMap;

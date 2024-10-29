@@ -11,7 +11,8 @@ import {
     ColaCadetesPorTiendasCollection,
     PedidosAsignadosCollection,
     ImagesCollection,
-    VentasCollection
+    VentasCollection,
+    PaypalCollection
   } from "../imports/collection/collections";
 
 if (Meteor.isServer) {
@@ -71,6 +72,9 @@ if (Meteor.isServer) {
       });
       Meteor.publish("carrito", function (selector,option) {
         return CarritoCollection.find(selector?selector:{},option?option:{});
+      });
+      Meteor.publish("paypal", function (selector,option) {
+        return PaypalCollection.find(selector?selector:{},option?option:{});
       });
       
 }
