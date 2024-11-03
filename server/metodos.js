@@ -422,6 +422,8 @@ if (Meteor.isServer) {
           _id: idPedido,
           entregado: false,
         });
+        console.log("pedidoAsignado en avanzarPedidos",pedidoAsignado);
+        console.log("idPedido en avanzarPedidos",idPedido);
         let venta =
           pedidoAsignado &&
           (await VentasCollection.findOne(pedidoAsignado.idVentas));
