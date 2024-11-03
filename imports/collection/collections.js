@@ -255,6 +255,18 @@ export const SchemaCarritoCollection = new SimpleSchema({
     type: String,
     optional: false,
   },
+  coordenadas: {
+    type: Object,
+    optional: true,
+  },
+  "coordenadas.latitude": {
+    type: Number,
+    optional: true,
+  },
+  "coordenadas.longitude": {
+    type: Number,
+    optional: true,
+  },
   createdAt: {
     type: Date,
     autoValue: function () {
@@ -354,6 +366,18 @@ export const SchemaVentasCollection = new SimpleSchema({
   idPaypal:{
     type: String,
     optional: false
+  },
+  coordenadas: {
+    type: Object,
+    optional: false,
+  },
+  "coordenadas.latitude": {
+    type: Number,
+    optional: false,
+  },
+  "coordenadas.longitude": {
+    type: Number,
+    optional: false,
   },
   
 });

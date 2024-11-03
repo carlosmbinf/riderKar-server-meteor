@@ -15,8 +15,8 @@ const updateCoordinate = (coordinate) => ({
 
 
 const containerStyle = {
-  width: "400px",
-  height: "400px",
+  width: "100%",
+  minHeight: "400px",
 };
 
 
@@ -52,12 +52,12 @@ function Mapa({ coordinate, updateCoordinate }) {
     coordinate && setReady(true)
   },[coordinate])
 
-  const { compras } = useTracker(() => {
+  const  compras  = useTracker(() => {
     Meteor.subscribe("carrito", { idUser: Meteor.userId() });
 
     const compras = CarritoCollection.find({ idUser: Meteor.userId() }, { sort: { idTienda: 1 } }).fetch();
 
-    return { compras };
+    return  compras ;
   });
 
 
@@ -67,6 +67,18 @@ function Mapa({ coordinate, updateCoordinate }) {
     updateCoordinate(coordenadas)
 
     setPosicion(coordenadas);
+
+    //sacar _id de la compra y actualizar la coordenada
+    let listId = compras ? compras.map(compra=>compra._id) : [];
+
+    compras && listId.forEach(id=>{
+      CarritoCollection.update(id, {
+        $set: {
+          coordenadas: { latitude: coordenadas.lat, longitude: coordenadas.lng },
+        },
+      });
+    });
+    
     console.log("Coordenadas",coordinate);
   // await  compras.forEach(compra=>{
   //     CarritoCollection.update(compra._id, {

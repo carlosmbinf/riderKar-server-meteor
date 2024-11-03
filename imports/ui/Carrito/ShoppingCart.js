@@ -152,7 +152,7 @@ const ConnectedShoppingCart = () => {
  
 
   const isStepOptional = (step) => {
-    return step === 1;
+    return false;//step === 1;
   };
 
   const isStepSkipped = (step) => {
@@ -327,7 +327,7 @@ let ContentSteps = () => {
               xs={12}
               style={{ paddingBottom: 20 }}
             >
-              <Chip color="info" label={`Tienes ${compras.length} compras en el Carrito`} />
+              <Chip color="info" label={`Tienes ${compras.length} compras en el Carrito`} style={{width:'100%'}} />
             </Grid>
           </Grid>
          {idTiendas.map((idTienda) => {
@@ -380,6 +380,8 @@ let ContentSteps = () => {
               xs={12}
               style={{ paddingBottom: 20 }}
             >
+              <Chip color="info" label={`Tienes ${compras.length} compras en el Carrito`} style={{width:'100%', marginBottom:20}}/>
+              <h2 style={{width:'100%', marginBottom:20, textAlign:'center'}}>Seleccione la ubicación de entrega</h2>
               <ConnectedMap/>
             </Grid>
           </Grid>
@@ -501,7 +503,7 @@ let ContentSteps = () => {
           )}
 
           <Button
-            disabled={compras.length == 0}
+            disabled={compras.length == 0 || (activeStep === 1 && !(compras.filter(compra => compra.coordenadas != null).length > 0))}
             variant="contained"
             onClick={handleNext}
           >

@@ -385,6 +385,7 @@ if (Meteor.isServer) {
           cobroEntrega,
           comentario,
           idPaypal,
+          coordenadas:  comprasEnCarrito[0].coordenadas,
         });
 
         
@@ -458,9 +459,11 @@ if (Meteor.isServer) {
               );
               break;
           }
+        console.log("Pedido", idPedido, " Continuado correctamente");
+        }else{
+          console.log("No se encontro la venta");
         }
 
-        console.log("Pedido", idPedido, " Continuado correctamente");
       } catch (error) {
         console.log(error.message);
 
